@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Vector — Крипто-биржа фриланса</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: touch;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+            background-color: #f0f4ff;
+            color: #1a202c;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        body.dark {
+            background-color: #120e2d;
+            color: #f0f0f0;
+        }
+        
+        /* Анимации для превью */
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            33% { transform: translateY(-10px) rotate(3deg); }
+            66% { transform: translateY(5px) rotate(-3deg); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.9; }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        
+        @keyframes orbit {
+            0% { transform: rotate(0deg) translateX(40px) rotate(0deg); }
+            100% { transform: rotate(360deg) translateX(40px) rotate(-360deg); }
+        }
+        
+        @keyframes textGlow {
+            0%, 100% { text-shadow: 0 0 10px rgba(255, 255, 255, 0.7); }
+            50% { text-shadow: 0 0 20px rgba(255, 255, 255, 0.9), 0 0 30px rgba(255, 255, 255, 0.5); }
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .preview-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #6e44ff 0%, #9c6bff 30%, #6e44ff 70%, #9c6bff 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 8s ease infinite;
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+            border-radius: 12px;
+            overflow: hidden;
+            z-index: 100;
+        }
+        
+        .logo-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin-bottom: 30px;
+        }
+        
+        .logo-hexagon {
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: float 6s ease-in-out infinite;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .logo-hexagon::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            animation: shimmer 3s infinite linear;
+            transform: rotate(45deg);
+        }
+        
+        .logo-letter {
+            font-size: 50px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6e44ff 0%, #9c6bff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 2px 4px rgba(110, 68, 255, 0.3);
+            letter-spacing: -2px;
+        }
+        
+        .logo-orbit {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            animation: orbit 12s linear infinite;
+        }
+        
+        .logo-dot {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+        }
+        
+        .preview-text {
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+            animation: pulse 3s ease-in-out infinite, textGlow 4s ease-in-out infinite;
+            letter-spacing: 1px;
+        }
+        
+        .loading-container {
+            width: 180px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .loading-progress {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, rgba(255,255,255,0.6), rgba(255,255,255,0.9));
+            border-radius: 3px;
+            animation: shimmer 2s infinite linear;
+            transition: width 0.3s ease;
+        }
+        
+        .preview-tagline {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 14px;
+            font-weight: 400;
+            animation: fadeIn 1.5s ease-out;
+            text-align: center;
+            max-width: 240px;
+            line-height: 1.4;
+        }
+        
+        .floating-particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: float 8s infinite ease-in-out;
+        }
+        
+        .particle:nth-child(1) { width: 3px; height: 3px; top: 20%; left: 10%; animation-delay: 0s; animation-duration: 10s; }
+        .particle:nth-child(2) { width: 4px; height: 4px; top: 60%; left: 5%; animation-delay: 1s; animation-duration: 12s; }
+        .particle:nth-child(3) { width: 3px; height: 3px; top: 30%; right: 10%; animation-delay: 2s; animation-duration: 9s; }
+        .particle:nth-child(4) { width: 5px; height: 5px; bottom: 20%; right: 15%; animation-delay: 0.5s; animation-duration: 11s; }
+        .particle:nth-child(5) { width: 3px; height: 3px; bottom: 40%; left: 15%; animation-delay: 3s; animation-duration: 13s; }
+        
+        .spinning-element {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: orbit 15s linear infinite;
+        }
+        
+        .spinning-element:nth-child(1) { top: 25%; left: 20%; width: 50px; height: 50px; }
+        .spinning-element:nth-child(2) { bottom: 30%; right: 20%; width: 30px; height: 30px; animation-duration: 12s; animation-direction: reverse; }
+        
+        /* Остальные стили */
+        #app {
+            position: relative;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        .app-content {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+        
+        body.dark .card {
+            background-color: #1e1a3a;
+            border-color: #2d294a;
+        }
+        body.dark .bg-white {
+            background-color: #120e2d;
+        }
+        body.dark .border-gray-100 {
+            border-color: #2d294a;
+        }
+        body.dark .text-gray-600 {
+            color: #bbb;
+        }
+        body.dark .bg-gray-100 {
+            background-color: #1e1a3a;
+        }
+        body.dark .text-gray-700 {
+            color: #ddd;
+        }
+        body.dark input {
+            background-color: #1e1a3a;
+            border-color: #2d294a;
+            color: #fff;
+        }
+
+        .card {
+            transition: all 0.2s ease;
+            border-radius: 12px;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        }
+        .tab-active {
+            background: linear-gradient(90deg, #6e44ff, #9c6bff);
+            color: white;
+        }
+        .tab-inactive {
+            background-color: #e6e0ff;
+            color: #6e44ff;
+        }
+        body.dark .tab-inactive {
+            background-color: #1e1a3a;
+            color: #b8a4ff;
+        }
+        .category-tag {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.25rem;
+            color: #4a5568;
+            font-size: 0.75rem;
+            line-height: 1rem;
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
+        .nav-item.active {
+            color: #7c3aed;
+        }
+        body.dark .nav-item {
+            color: #6b7280;
+        }
+        body.dark .nav-item.active {
+            color: #a78bfa;
+        }
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+        .bottom-nav {
+            height: 68px;
+            background-color: #ffffff;
+            border-top: 1px solid #e0d8ff;
+        }
+        body.dark .bottom-nav {
+            background-color: #120e2d;
+            border-top: 1px solid #1e1a3a;
+        }
+        .nav-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 85px;
+            height: 100%;
+            font-size: 12px;
+            color: #4a5568;
+            font-weight: 500;
+        }
+        .nav-button.active {
+            color: #6e44ff;
+        }
+        body.dark .nav-button {
+            color: #555;
+        }
+        body.dark .nav-button.active {
+            color: #b8a4ff;
+        }
+        .nav-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 100%;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        .compact-filter {
+            display: flex;
+            overflow-x: auto;
+            gap: 6px;
+            padding: 6px 0;
+            scrollbar-width: none;
+        }
+        .compact-filter::-webkit-scrollbar {
+            display: none;
+        }
+        .filter-tag {
+            flex-shrink: 0;
+            padding: 5px 10px;
+            border-radius: 16px;
+            font-size: 12px;
+            background-color: #e6e0ff;
+            color: #6e44ff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-tag.active {
+            background: linear-gradient(90deg, #6e44ff, #9c6bff);
+            color: white;
+        }
+        body.dark .filter-tag {
+            background-color: #1e1a3a;
+            color: #b8a4ff;
+        }
+        body.dark .filter-tag.active {
+            background: linear-gradient(90deg, #6e44ff, #9c6bff);
+            color: white;
+        }
+        .vector-logo {
+            background: linear-gradient(135deg, #6e44ff 0%, #9c6bff 100%);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .strict-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border-radius: 6px;
+        }
+        
+        .text-gray-600 {
+            color: #4a5568;
+        }
+        body.dark .text-gray-600 {
+            color: #bbb;
+        }
+        
+        .text-gray-700 {
+            color: #374151;
+        }
+        body.dark .text-gray-700 {
+            color: #ddd;
+        }
+        
+        .text-gray-400 {
+            color: #718096;
+        }
+        body.dark .text-gray-400 {
+            color: #cbd5e0;
+        }
+        
+        .text-gray-500 {
+            color: #6b7280;
+        }
+        body.dark .text-gray-500 {
+            color: #a0aec0;
+        }
+        
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6e44ff 0%, #9c6bff 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: white;
+            margin: 0 auto 16px;
+        }
+        
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+        
+        .profile-stat {
+            text-align: center;
+            padding: 12px;
+            background-color: #f9fafb;
+            border-radius: 12px;
+        }
+        
+        body.dark .profile-stat {
+            background-color: #1e1a3a;
+        }
+        
+        .profile-stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #6e44ff;
+        }
+        
+        .profile-stat-label {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        body.dark .profile-stat-label {
+            color: #9ca3af;
+        }
+        
+        .profile-tabs {
+            display: flex;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 16px;
+        }
+        
+        body.dark .profile-tabs {
+            border-bottom: 1px solid #2d294a;
+        }
+        
+        .profile-tab {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+        }
+        
+        .profile-tab.active {
+            border-bottom: 2px solid #6e44ff;
+            color: #6e44ff;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .service-category-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+            border-radius: 12px;
+            background-color: #f9fafb;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        body.dark .service-category-btn {
+            background-color: #1e1a3a;
+        }
+        
+        .service-category-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .subcategories-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .subcategory-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px;
+            border-radius: 12px;
+            background-color: #f9fafb;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        body.dark .subcategory-btn {
+            background-color: #1e1a3a;
+        }
+        
+        .subcategory-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .subcategory-icon {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .services-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            color: #4a5568;
+        }
+        body.dark .services-title {
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased">
+    <div id="app" class="max-w-lg mx-auto bg-white min-h-screen flex flex-col">
+        <!-- Анимированное превью -->
+        <div id="preview" class="preview-container">
+            <div class="floating-particles">
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+            </div>
+            
+            <div class="spinning-element"></div>
+            <div class="spinning-element"></div>
+            
+            <div class="logo-container">
+                <div class="logo-orbit">
+                    <div class="logo-dot"></div>
+                </div>
+                <div class="logo-hexagon">
+                    <div class="logo-letter">V</div>
+                </div>
+            </div>
+            
+            <div class="preview-text">VECTOR</div>
+            
+            <div class="loading-container">
+                <div class="loading-progress" id="loading-progress"></div>
+            </div>
+            
+            <div class="preview-tagline">Крипто-биржа фриланса будущего</div>
+        </div>
+
+        <!-- Основное содержимое приложения -->
+        <div id="app-content" class="app-content">
+            <!-- Header -->
+            <div class="bg-white dark:bg-[#120e2d] border-b border-gray-100 dark:border-[#1e1a3a] px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 vector-logo">
+                        <span class="text-white font-bold text-sm">V</span>
+                    </div>
+                    <h1 class="font-bold text-lg">Vector</h1>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-1 text-sm font-medium">
+                        <i class="fa-brands fa-ethereum text-purple-600"></i>
+                        <span id="balance">12.45 TON</span>
+                    </div>
+                    <button id="btn-theme" class="p-2 rounded-full hover:bg-purple-50 dark:hover:bg-[#1e1a3a]">
+                        <i class="fa-solid fa-moon text-gray-600 dark:hidden"></i>
+                        <i class="fa-solid fa-sun text-yellow-400 hidden dark:inline"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Заголовок "услуги" только на главной -->
+            <div id="services-title-section" class="px-4 pt-4">
+                <h2 class="services-title">Услуги</h2>
+            </div>
+
+            <!-- Categories (Top Menu) - только на главной -->
+            <div id="categories-menu" class="px-4 py-3">
+                <div class="category-grid">
+                    <button class="flex flex-col items-center space-y-1 category-btn" data-category="code">
+                        <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center strict-icon">
+                            <i class="fa-solid fa-code text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <span class="text-xs text-gray-600 dark:text-gray-400">Код</span>
+                    </button>
+                    <button class="flex flex-col items-center space-y-1 category-btn" data-category="marketing">
+                        <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center strict-icon">
+                            <i class="fa-solid fa-bullhorn text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <span class="text-xs text-gray-600 dark:text-gray-400">Маркетинг</span>
+                    </button>
+                    <button class="flex flex-col items-center space-y-1 category-btn" data-category="copywriting">
+                        <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center strict-icon">
+                            <i class="fa-solid fa-pen-nib text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <span class="text-xs text-gray-600 dark:text-gray-400">Тексты</span>
+                    </button>
+                    <button class="flex flex-col items-center space-y-1 category-btn" data-category="design">
+                        <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center strict-icon">
+                            <i class="fa-solid fa-palette text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <span class="text-xs text-gray-600 dark:text-gray-400">Дизайн</span>
+                    </button>
+                    <button class="flex flex-col items-center space-y-1 category-btn" data-category="services">
+                        <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center strict-icon">
+                            <i class="fa-solid fa-hand-holding-heart text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <span class="text-xs text-gray-600 dark:text-gray-400">Услуги</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs - только на главной -->
+            <div id="tabs-section" class="px-4 py-2">
+                <div class="flex space-x-1">
+                    <button class="tab-active flex-1 py-2.5 px-3 rounded-lg font-medium text-xs tab-btn" data-tab="all">
+                        📋 Все задания
+                    </button>
+                    <button class="tab-inactive flex-1 py-2.5 px-3 rounded-lg font-medium text-xs tab-btn" data-tab="vacancies">
+                        🧑‍💻 Вакансии
+                    </button>
+                    <button class="tab-inactive flex-1 py-2.5 px-3 rounded-lg font-medium text-xs tab-btn" data-tab="microtasks">
+                        ⚡ Микрозадания
+                    </button>
+                </div>
+            </div>
+
+            <!-- Compact Filter - только на главной -->
+            <div id="filter-section" class="px-4">
+                <div class="compact-filter">
+                    <div class="filter-tag active">Все</div>
+                    <div class="filter-tag">Python</div>
+                    <div class="filter-tag">Дизайн</div>
+                    <div class="filter-tag">Копирайтинг</div>
+                    <div class="filter-tag">Маркетинг</div>
+                    <div class="filter-tag">Telegram</div>
+                    <div class="filter-tag">SEO</div>
+                    <div class="filter-tag">Frontend</div>
+                    <div class="filter-tag">Backend</div>
+                </div>
+            </div>
+
+            <!-- Content: Main Home Page -->
+            <div id="content-home" class="px-4 pb-16">
+                <div class="space-y-4 mt-2" id="tasks-container">
+                    <!-- Задания будут добавляться динамически -->
+                </div>
+            </div>
+
+            <!-- Content: Vacancies Tab -->
+            <div id="content-vacancies" class="px-4 pb-16 hidden">
+                <div class="space-y-4 mt-2" id="vacancies-container">
+                    <!-- Вакансии будут добавляться динамически -->
+                </div>
+            </div>
+
+            <!-- Content: Microtasks Tab -->
+            <div id="content-microtasks" class="px-4 pb-16 hidden">
+                <div class="space-y-4 mt-2" id="microtasks-container">
+                    <!-- Микрозадания будут добавляться динамически -->
+                </div>
+            </div>
+
+            <!-- Content: Category Services -->
+            <div id="content-category" class="px-4 pb-16 hidden">
+                <div class="mt-4">
+                    <button id="back-to-home" class="flex items-center text-purple-600 dark:text-purple-400 text-sm mb-4">
+                        <i class="fa-solid fa-arrow-left mr-2"></i>
+                        Назад к главной
+                    </button>
+                    
+                    <h2 class="text-xl font-bold mb-4" id="services-category-title">Категории</h2>
+                    
+                    <div id="services-main-content">
+                        <div class="services-grid">
+                            <div class="service-category-btn" data-service-category="development">
+                                <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mb-3">
+                                    <i class="fa-solid fa-code text-purple-600 dark:text-purple-400 text-xl"></i>
+                                </div>
+                                <h3 class="font-semibold text-sm mb-2">Разработка</h3>
+                            </div>
+                            
+                            <div class="service-category-btn" data-service-category="design">
+                                <div class="w-12 h-12 bg-amber-100 dark:bg-amber-900/20 rounded-full flex items-center justify-center mb-3">
+                                    <i class="fa-solid fa-palette text-amber-600 dark:text-amber-400 text-xl"></i>
+                                </div>
+                                <h3 class="font-semibold text-sm mb-2">Дизайн</h3>
+                            </div>
+                            
+                            <div class="service-category-btn" data-service-category="marketing">
+                                <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-3">
+                                    <i class="fa-solid fa-bullhorn text-blue-600 dark:text-blue-400 text-xl"></i>
+                                </div>
+                                <h3 class="font-semibold text-sm mb-2">Маркетинг</h3>
+                            </div>
+                            
+                            <div class="service-category-btn" data-service-category="content">
+                                <div class="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-3">
+                                    <i class="fa-solid fa-pen-nib text-green-600 dark:text-green-400 text-xl"></i>
+                                </div>
+                                <h3 class="font-semibold text-sm mb-2">Контент</h3>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="services-subcategories-content" class="hidden">
+                        <div class="subcategories-grid" id="development-subcategories">
+                            <div class="subcategory-btn" data-subcategory="web">
+                                <div class="subcategory-icon bg-purple-100 dark:bg-purple-900/20">
+                                    <i class="fa-solid fa-globe text-purple-600 dark:text-purple-400"></i>
+                                </div>
+                                <span class="text-xs font-medium">Веб-разработка</span>
+                            </div>
+                            <div class="subcategory-btn" data-subcategory="mobile">
+                                <div class="subcategory-icon bg-purple-100 dark:bg-purple-900/20">
+                                    <i class="fa-solid fa-mobile-alt text-purple-600 dark:text-purple-400"></i>
+                                </div>
+                                <span class="text-xs font-medium">Мобильные приложения</span>
+                            </div>
+                            <div class="subcategory-btn" data-subcategory="bots">
+                                <div class="subcategory-icon bg-purple-100 dark:bg-purple-900/20">
+                                    <i class="fa-solid fa-robot text-purple-600 dark:text-purple-400"></i>
+                                </div>
+                                <span class="text-xs font-medium">Чат-боты</span>
+                            </div>
+                        </div>
+                        
+                        <div class="subcategories-grid hidden" id="design-subcategories">
+                            <div class="subcategory-btn" data-subcategory="ui">
+                                <div class="subcategory-icon bg-amber-100 dark:bg-amber-900/20">
+                                    <i class="fa-solid fa-paint-brush text-amber-600 dark:text-amber-400"></i>
+                                </div>
+                                <span class="text-xs font-medium">UI/UX дизайн</span>
+                            </div>
+                            <div class="subcategory-btn" data-subcategory="graphic">
+                                <div class="subcategory-icon bg-amber-100 dark:bg-amber-900/20">
+                                    <i class="fa-solid fa-image text-amber-600 dark:text-amber-400"></i>
+                                </div>
+                                <span class="text-xs font-medium">Графический дизайн</span>
+                            </div>
+                            <div class="subcategory-btn" data-subcategory="logo">
+                                <div class="subcategory-icon bg-amber-100 dark:bg-amber-900/20">
+                                    <i class="fa-solid fa-pen-fancy text-amber-600 dark:text-amber-400"></i>
+                                </div>
+                                <span class="text-xs font-medium">Логотипы</span>
+                            </div>
+                        </div>
+                        
+                        <div class="subcategories-grid hidden" id="marketing-subcategories">
+                            <div class="subcategory-btn" data-subcategory="smm">
+                                <div class="subcategory-icon bg-blue-100 dark:bg-blue-900/20">
+                                    <i class="fa-solid fa-hashtag text-blue-600 dark:text-blue-400"></i>
+                                </div>
+                                <span class="text-xs font-medium">SMM</span>
+                            </div>
+                            <div class="subcategory-btn" data-subcategory="seo">
+                                <div class="subcategory-icon bg-blue-100 dark:bg-blue-900/20">
+                                    <i class="fa-solid fa-search text-blue-600 dark:text-blue-400"></i>
+                                </div>
+                                <span class="text-xs font-medium">SEO</span>
+                            </div>
+                            <div class="subcategory-btn" data-subcategory="context">
+                                <div class="subcategory-icon bg-blue-100 dark:bg-blue-900/20">
+                                    <i class="fa-solid fa-ad text-blue-600 dark:text-blue-400"></i>
+                                </div>
+                                <span class="text-xs font-medium">Контекстная реклама</span>
+                            </div>
+                        </div>
+                        
+                        <div class="subcategories-grid hidden" id="content-subcategories">
+                            <div class="subcategory-btn" data-subcategory="copywriting">
+                                <div class="subcategory-icon bg-green-100 dark:bg-green-900/20">
+                                    <i class="fa-solid fa-pen text-green-600 dark:text-green-400"></i>
+                                </div>
+                                <span class="text-xs font-medium">Копирайтинг</span>
+                            </div>
+                            <div class="subcategory-btn" data-subcategory="translation">
+                                <div class="subcategory-icon bg-green-100 dark:bg-green-900/20">
+                                    <i class="fa-solid fa-language text-green-600 dark:text-green-400"></i>
+                                </div>
+                                <span class="text-xs font-medium">Переводы</span>
+                            </div>
+                            <div class="subcategory-btn" data-subcategory="video">
+                                <div class="subcategory-icon bg-green-100 dark:bg-green-900/20">
+                                    <i class="fa-solid fa-video text-green-600 dark:text-green-400"></i>
+                                </div>
+                                <span class="text-xs font-medium">Видеомонтаж</span>
+                            </div>
+                        </div>
+                        
+                        <button id="back-to-services" class="flex items-center text-purple-600 dark:text-purple-400 text-sm mt-6">
+                            <i class="fa-solid fa-arrow-left mr-2"></i>
+                            Назад к категориям
+                        </button>
+                    </div>
+                    
+                    <div id="services-list-content" class="hidden">
+                        <div class="space-y-4 mt-4" id="services-container">
+                            <!-- Услуги будут добавляться динамически -->
+                        </div>
+                        
+                        <button id="back-to-subcategories" class="flex items-center text-purple-600 dark:text-purple-400 text-sm mt-6">
+                            <i class="fa-solid fa-arrow-left mr-2"></i>
+                            Назад к подкатегориям
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content: Search -->
+            <div id="content-search" class="px-4 pb-16 hidden">
+                <div class="mt-4">
+                    <div class="relative">
+                        <input type="text" placeholder="Поиск заданий, услуг, исполнителей..." class="w-full p-3 pl-10 rounded-lg border border-gray-300 dark:border-[#2d294a] bg-white dark:bg-[#1e1a3a] text-gray-900 dark:text-white">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-gray-400"></i>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h3 class="font-semibold text-sm mb-2">Популярные запросы</h3>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full text-xs">Python</span>
+                            <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full text-xs">Дизайн</span>
+                            <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full text-xs">Копирайтинг</span>
+                            <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full text-xs">Telegram</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <h3 class="font-semibold text-sm mb-2">Результаты поиска</h3>
+                        <div class="space-y-3">
+                            <div class="card bg-white dark:bg-[#1e1a3a] p-3 border border-gray-100 dark:border-[#2d294a]">
+                                <div class="flex justify-between">
+                                    <span class="font-medium text-sm">Разработка Telegram-бота</span>
+                                    <span class="text-purple-600 dark:text-purple-400 text-sm font-bold">25 TON</span>
+                                </div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">#python #telegram</div>
+                            </div>
+                            
+                            <div class="card bg-white dark:bg-[#1e1a3a] p-3 border border-gray-100 dark:border-[#2d294a]">
+                                <div class="flex justify-between">
+                                    <span class="font-medium text-sm">Дизайн логотипа</span>
+                                    <span class="text-purple-600 dark:text-purple-400 text-sm font-bold">12 TON</span>
+                                </div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">#дизайн #логотип</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content: Create -->
+            <div id="content-create" class="px-4 pb-16 hidden">
+                <div class="mt-6">
+                    <button id="back-to-home-create" class="flex items-center text-purple-600 dark:text-purple-400 text-sm mb-4">
+                        <i class="fa-solid fa-arrow-left mr-2"></i>
+                        Назад к главной
+                    </button>
+                    
+                    <h2 class="text-xl font-bold text-center mb-6">Создать</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="card bg-white dark:bg-[#1e1a3a] p-6 border border-gray-100 dark:border-[#2d294a] text-center">
+                            <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <i class="fa-solid fa-briefcase text-purple-600 dark:text-purple-400 text-xl"></i>
+                            </div>
+                            <h3 class="font-semibold mb-2">Задание</h3>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 mb-4">Найти исполнителя для выполнения задачи</p>
+                            <button class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg text-sm font-medium">
+                                Создать задание
+                            </button>
+                        </div>
+                        
+                        <div class="card bg-white dark:bg-[#1e1a3a] p-6 border border-gray-100 dark:border-[#2d294a] text-center">
+                            <div class="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <i class="fa-solid fa-hand-holding-heart text-green-600 dark:text-green-400 text-xl"></i>
+                            </div>
+                            <h3 class="font-semibold mb-2">Услугу</h3>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 mb-4">Предложить свои услуги другим пользователям</p>
+                            <button class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-sm font-medium">
+                                Предложить услугу
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content: Messages -->
+            <div id="content-messages" class="px-4 pb-16 hidden">
+                <div class="mt-4">
+                    <button id="back-to-home-messages" class="flex items-center text-purple-600 dark:text-purple-400 text-sm mb-4">
+                        <i class="fa-solid fa-arrow-left mr-2"></i>
+                        Назад к главной
+                    </button>
+                    
+                    <h2 class="text-xl font-bold mb-4">Сообщения</h2>
+                    
+                    <div class="space-y-3">
+                        <div class="card bg-white dark:bg-[#1e1a3a] p-3 border border-gray-100 dark:border-[#2d294a] flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center">
+                                <span class="text-purple-600 dark:text-purple-400 font-medium">А</span>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-medium text-sm">Анна Петрова</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Привет! Готов выполнить ваш заказ...</div>
+                            </div>
+                            <div class="text-xs text-gray-400">12:45</div>
+                        </div>
+                        
+                        <div class="card bg-white dark:bg-[#1e1a3a] p-3 border border-gray-100 dark:border-[#2d294a] flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
+                                <span class="text-blue-600 dark:text-blue-400 font-medium">М</span>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-medium text-sm">Михаил Иванов</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Спасибо за сотрудничество!</div>
+                            </div>
+                            <div class="text-xs text-gray-400">Вчера</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content: Profile -->
+            <div id="content-profile" class="px-4 pb-16 hidden">
+                <div class="mt-4">
+                    <button id="back-to-home-profile" class="flex items-center text-purple-600 dark:text-purple-400 text-sm mb-4">
+                        <i class="fa-solid fa-arrow-left mr-2"></i>
+                        Назад к главной
+                    </button>
+                    
+                    <div class="card bg-white dark:bg-[#1e1a3a] p-6 border border-gray-100 dark:border-[#2d294a] text-center mb-6">
+                        <div class="profile-avatar" id="profile-avatar">
+                            АС
+                        </div>
+                        <h2 class="text-xl font-bold mb-2" id="profile-name">Анна, студия дизайна</h2>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4" id="profile-description">Дизайнер с 5-летним опытом работы. Специализируюсь на создании логотипов и брендбуков.</p>
+                        <div class="flex justify-center space-x-3">
+                            <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full text-xs">Дизайн</span>
+                            <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full text-xs">Логотипы</span>
+                            <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full text-xs">Брендинг</span>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-stats">
+                        <div class="profile-stat">
+                            <div class="profile-stat-value">24</div>
+                            <div class="profile-stat-label">Выполнено работ</div>
+                        </div>
+                        <div class="profile-stat">
+                            <div class="profile-stat-value">4.9</div>
+                            <div class="profile-stat-label">Рейтинг</div>
+                        </div>
+                        <div class="profile-stat">
+                            <div class="profile-stat-value">12.45</div>
+                            <div class="profile-stat-label">Баланс (TON)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-tabs">
+                        <div class="profile-tab active" data-tab="my-tasks">Мои задания</div>
+                        <div class="profile-tab" data-tab="favorites">Избранное</div>
+                        <div class="profile-tab" data-tab="reviews">Отзывы</div>
+                    </div>
+                    
+                    <div id="profile-my-tasks" class="space-y-4 mt-4">
+                        <!-- Мои задания будут добавляться динамически -->
+                    </div>
+                    
+                    <div id="profile-favorites" class="space-y-4 mt-4 hidden">
+                        <!-- Избранное будет добавляться динамически -->
+                    </div>
+                    
+                    <div id="profile-reviews" class="space-y-4 mt-4 hidden">
+                        <div class="card bg-white dark:bg-[#1e1a3a] p-4 border border-gray-100 dark:border-[#2d294a]">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center">
+                                    <span class="text-purple-600 dark:text-purple-400 font-medium">МИ</span>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-sm">Михаил Иванов</h3>
+                                    <div class="flex items-center">
+                                        <div class="flex text-amber-400">
+                                            <i class="fa-solid fa-star text-xs"></i>
+                                            <i class="fa-solid fa-star text-xs"></i>
+                                            <i class="fa-solid fa-star text-xs"></i>
+                                            <i class="fa-solid fa-star text-xs"></i>
+                                            <i class="fa-solid fa-star text-xs"></i>
+                                        </div>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400 ml-2">5.0</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Анна выполнила работу быстро и качественно. Очень доволен результатом! Обязательно буду обращаться еще.</p>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">2 дня назад</div>
+                        </div>
+                        
+                        <div class="card bg-white dark:bg-[#1e1a3a] p-4 border border-gray-100 dark:border-[#2d294a]">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
+                                    <span class="text-blue-600 dark:text-blue-400 font-medium">ЕК</span>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-sm">Екатерина Ковалева</h3>
+                                    <div class="flex items-center">
+                                        <div class="flex text-amber-400">
+                                            <i class="fa-solid fa-star text-xs"></i>
+                                            <i class="fa-solid fa-star text-xs"></i>
+                                            <i class="fa-solid fa-star text-xs"></i>
+                                            <i class="fa-solid fa-star text-xs"></i>
+                                            <i class="fa-solid fa-star text-xs"></i>
+                                        </div>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400 ml-2">5.0</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Отличный дизайнер! Учла все пожелания и предложила креативные идеи. Рекомендую!</p>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">неделю назад</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Navigation -->
+            <div class="fixed bottom-0 left-0 right-0 z-20 bottom-nav">
+                <div class="nav-container">
+                    <button class="nav-button active" id="nav-home">
+                        <i class="fa-solid fa-house nav-icon"></i>
+                        <span>Главная</span>
+                    </button>
+                    <button class="nav-button" id="nav-search">
+                        <i class="fa-solid fa-magnifying-glass nav-icon"></i>
+                        <span>Поиск</span>
+                    </button>
+                    <button class="nav-button" id="nav-create">
+                        <i class="fa-solid fa-plus nav-icon"></i>
+                        <span>Создать</span>
+                    </button>
+                    <button class="nav-button" id="nav-messages">
+                        <i class="fa-solid fa-message nav-icon"></i>
+                        <span>Сообщения</span>
+                    </button>
+                    <button class="nav-button" id="nav-profile-bottom">
+                        <i class="fa-solid fa-user nav-icon"></i>
+                        <span>Профиль</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Данные заданий
+        const tasks = [
+            {
+                id: 1,
+                title: "Разработка Telegram-бота",
+                description: "Нужен бот для приёма заказов. Aiogram 3.x, PostgreSQL.",
+                category: "code",
+                budget: { min: 15, max: 25 },
+                deadline: 3,
+                tags: ["python", "telegram", "бот"],
+                createdAt: new Date().toISOString(),
+                createdBy: 'current_user'
+            },
+            {
+                id: 2,
+                title: "Дизайн логотипа для стартапа",
+                description: "Минимализм, тёплые тона, должно ассоциироваться с уютом.",
+                category: "design",
+                budget: { min: 8, max: 12 },
+                deadline: 7,
+                tags: ["логотип", "брендинг"],
+                createdAt: new Date().toISOString(),
+                createdBy: 'current_user'
+            },
+            {
+                id: 3,
+                title: "Senior Python Developer",
+                description: "Ищем опытного разработчика для работы над крупным проектом.",
+                category: "code",
+                budget: { min: 50, max: 80 },
+                deadline: 30,
+                tags: ["python", "django"],
+                createdAt: new Date().toISOString(),
+                createdBy: 'other_user'
+            },
+            {
+                id: 4,
+                title: "UX/UI Designer",
+                description: "Требуется дизайнер для создания интерфейсов мобильных приложений.",
+                category: "design",
+                budget: { min: 40, max: 60 },
+                deadline: 30,
+                tags: ["дизайн", "ux"],
+                createdAt: new Date().toISOString(),
+                createdBy: 'other_user'
+            },
+            {
+                id: 5,
+                title: "Проверить 10 ссылок",
+                description: "Проверить работоспособность ссылок на сайте.",
+                category: "other",
+                budget: { min: 0.5, max: 0.5 },
+                deadline: 1,
+                tags: ["тестирование"],
+                createdAt: new Date().toISOString(),
+                createdBy: 'other_user'
+            }
+        ];
+
+        // Данные услуг
+        const services = {
+            development: [
+                { id: 1, title: "Разработка веб-сайта", description: "Создаю современные адаптивные сайты", price: "от 50 TON", tags: ["HTML", "CSS", "JavaScript"] },
+                { id: 2, title: "Создание Telegram-бота", description: "Разрабатываю ботов на Python", price: "от 30 TON", tags: ["Python", "Telegram", "Bot"] },
+                { id: 3, title: "Мобильное приложение", description: "Разработка под iOS и Android", price: "от 100 TON", tags: ["React Native", "Flutter"] }
+            ],
+            design: [
+                { id: 4, title: "Дизайн логотипа", description: "Создаю уникальные логотипы", price: "от 20 TON", tags: ["Логотип", "Брендинг"] },
+                { id: 5, title: "UI/UI дизайн", description: "Проектирую интерфейсы", price: "от 40 TON", tags: ["Figma", "UI", "UX"] },
+                { id: 6, title: "Иллюстрации", description: "Создаю векторные иллюстрации", price: "от 15 TON", tags: ["Иллюстрация", "Вектор"] }
+            ],
+            marketing: [
+                { id: 7, title: "SMM продвижение", description: "Продвижение в социальных сетях", price: "от 25 TON", tags: ["SMM", "Соцсети"] },
+                { id: 8, title: "SEO оптимизация", description: "Повышение позиций в поиске", price: "от 35 TON", tags: ["SEO", "Оптимизация"] },
+                { id: 9, title: "Контекстная реклама", description: "Настройка Яндекс.Директ и Google Ads", price: "от 45 TON", tags: ["Реклама", "Яндекс", "Google"] }
+            ],
+            content: [
+                { id: 10, title: "Копирайтинг", description: "Напишу продающие тексты", price: "от 10 TON", tags: ["Тексты", "Копирайтинг"] },
+                { id: 11, title: "Переводы", description: "Перевод с английского на русский", price: "от 5 TON", tags: ["Перевод", "Английский"] },
+                { id: 12, title: "Редактура", description: "Вычитаю и исправлю тексты", price: "от 8 TON", tags: ["Редактура", "Корректура"] }
+            ]
+        };
+
+        // Функция для получения класса категории
+        function getCategoryClass(category) {
+            const classes = {
+                'code': 'bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300',
+                'design': 'bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300',
+                'marketing': 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300',
+                'copywriting': 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300',
+                'other': 'bg-gray-100 dark:bg-gray-900/20 text-gray-700 dark:text-gray-300'
+            };
+            return classes[category] || classes.other;
+        }
+
+        // Функция для получения названия категории
+        function getCategoryName(category) {
+            const names = {
+                'code': 'Код',
+                'design': 'Дизайн',
+                'marketing': 'Маркетинг',
+                'copywriting': 'Тексты',
+                'other': 'Другое'
+            };
+            return names[category] || names.other;
+        }
+
+        // Функция для отображения заданий
+        function renderTasks() {
+            // Рендерим все задания
+            renderTaskList('tasks-container', tasks);
+            
+            // Рендерим вакансии (задания с бюджетом > 20 TON)
+            const vacancies = tasks.filter(task => task.budget.min > 20);
+            renderTaskList('vacancies-container', vacancies);
+            
+            // Рендерим микрозадания (задания с бюджетом < 5 TON)
+            const microtasks = tasks.filter(task => task.budget.max < 5);
+            renderTaskList('microtasks-container', microtasks);
+        }
+
+        // Функция для отображения списка заданий
+        function renderTaskList(containerId, tasksToRender) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            if (tasksToRender.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500 py-8">Заданий пока нет</p>';
+                return;
+            }
+            
+            const tasksHtml = tasksToRender.map(task => {
+                const categoryClass = getCategoryClass(task.category);
+                const categoryName = getCategoryName(task.category);
+                
+                let budgetText = '';
+                if (task.budget.min && task.budget.max) {
+                    budgetText = `${task.budget.min}–${task.budget.max} TON`;
+                } else if (task.budget.min) {
+                    budgetText = `от ${task.budget.min} TON`;
+                } else if (task.budget.max) {
+                    budgetText = `до ${task.budget.max} TON`;
+                }
+                
+                let deadlineText = '';
+                if (task.deadline === 1) deadlineText = '1 день';
+                else if (task.deadline === 3) deadlineText = '3 дня';
+                else if (task.deadline === 7) deadlineText = 'неделя';
+                else if (task.deadline === 14) deadlineText = '2 недели';
+                else if (task.deadline === 30) deadlineText = 'месяц';
+                
+                const tagsHtml = task.tags.map(tag => 
+                    `<span class="text-xs bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 px-2 py-1 rounded">#${tag}</span>`
+                ).join('');
+                
+                return `
+                <div class="card bg-white dark:bg-[#1e1a3a] p-4 border border-gray-100 dark:border-[#2d294a]">
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-semibold text-sm">${task.title}</h3>
+                        <span class="category-tag ${categoryClass}">${categoryName}</span>
+                    </div>
+                    <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">${task.description}</p>
+                    <div class="flex items-center justify-between mt-2">
+                        <span class="font-bold text-purple-600 dark:text-purple-400 text-sm">${budgetText}</span>
+                        <span class="text-xs bg-purple-100 dark:bg-[#1e1a3a] text-purple-600 dark:text-purple-300 px-2 py-1 rounded-full">${deadlineText}</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        ${tagsHtml}
+                    </div>
+                    <div class="flex space-x-2 mt-3">
+                        <button class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-1.5 px-3 rounded text-xs font-medium transition apply-btn">Отклик</button>
+                        <button class="flex-1 border border-gray-300 dark:border-[#444] text-gray-700 dark:text-gray-300 py-1.5 px-3 rounded text-xs font-medium">Подробнее</button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = tasksHtml;
+        }
+
+        // Функция для отображения услуг
+        function renderServices(category, subcategory) {
+            const servicesContainer = document.getElementById('services-container');
+            if (!servicesContainer) return;
+            
+            const servicesToRender = services[category] || [];
+            
+            if (servicesToRender.length === 0) {
+                servicesContainer.innerHTML = '<p class="text-center text-gray-500 py-8">Услуг пока нет</p>';
+                return;
+            }
+            
+            const servicesHtml = servicesToRender.map(service => {
+                const tagsHtml = service.tags.map(tag => 
+                    `<span class="text-xs bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 px-2 py-1 rounded">#${tag}</span>`
+                ).join('');
+                
+                return `
+                <div class="card bg-white dark:bg-[#1e1a3a] p-4 border border-gray-100 dark:border-[#2d294a]">
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-semibold text-sm">${service.title}</h3>
+                        <span class="font-bold text-purple-600 dark:text-purple-400 text-sm">${service.price}</span>
+                    </div>
+                    <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">${service.description}</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        ${tagsHtml}
+                    </div>
+                    <button class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded text-xs font-medium mt-3 transition">
+                        Заказать услугу
+                    </button>
+                </div>
+                `;
+            }).join('');
+            
+            servicesContainer.innerHTML = servicesHtml;
+        }
+
+        // Анимированное превью
+        document.addEventListener('DOMContentLoaded', function() {
+            const app = document.getElementById('app');
+            const preview = document.getElementById('preview');
+            const appContent = document.getElementById('app-content');
+            const loadingProgress = document.getElementById('loading-progress');
+            
+            // Анимация прогресса загрузки
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 8;
+                loadingProgress.style.width = Math.min(progress, 100) + '%';
+                
+                if (progress >= 100) {
+                    clearInterval(progressInterval);
+                    
+                    // Прячем превью и показываем основное приложение
+                    setTimeout(() => {
+                        preview.style.opacity = '0';
+                        preview.style.transform = 'translateY(-10px)';
+                        
+                        setTimeout(() => {
+                            preview.style.display = 'none';
+                            appContent.style.display = 'block';
+                            // Отображаем задания после загрузки
+                            renderTasks();
+                        }, 800);
+                    }, 500);
+                }
+            }, 150);
+        });
+
+        // Tab switching (на главной странице)
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const contentHome = document.getElementById('content-home');
+        const contentVacancies = document.getElementById('content-vacancies');
+        const contentMicrotasks = document.getElementById('content-microtasks');
+        const contentCategory = document.getElementById('content-category');
+        const contentSearch = document.getElementById('content-search');
+        const contentCreate = document.getElementById('content-create');
+        const contentMessages = document.getElementById('content-messages');
+        const contentProfile = document.getElementById('content-profile');
+        const categoriesMenu = document.getElementById('categories-menu');
+        const tabsSection = document.getElementById('tabs-section');
+        const filterSection = document.getElementById('filter-section');
+        const servicesTitleSection = document.getElementById('services-title-section');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tab = button.dataset.tab;
+                
+                // Update active tab
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    if (btn.dataset.tab === tab) {
+                        btn.className = 'tab-active flex-1 py-2.5 px-3 rounded-lg font-medium text-xs tab-btn';
+                    } else {
+                        btn.className = 'tab-inactive flex-1 py-2.5 px-3 rounded-lg font-medium text-xs tab-btn';
+                    }
+                });
+                
+                // Show content
+                contentHome.classList.add('hidden');
+                contentVacancies.classList.add('hidden');
+                contentMicrotasks.classList.add('hidden');
+                
+                if (tab === 'all') {
+                    contentHome.classList.remove('hidden');
+                } else if (tab === 'vacancies') {
+                    contentVacancies.classList.remove('hidden');
+                } else if (tab === 'microtasks') {
+                    contentMicrotasks.classList.remove('hidden');
+                }
+            });
+        });
+
+        // Category menu
+        const categoryButtons = document.querySelectorAll('.category-btn');
+        categoryButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const category = button.dataset.category;
+                
+                // Hide main sections
+                categoriesMenu.classList.add('hidden');
+                tabsSection.classList.add('hidden');
+                filterSection.classList.add('hidden');
+                servicesTitleSection.classList.add('hidden');
+                contentHome.classList.add('hidden');
+                contentVacancies.classList.add('hidden');
+                contentMicrotasks.classList.add('hidden');
+                contentSearch.classList.add('hidden');
+                contentCreate.classList.add('hidden');
+                contentMessages.classList.add('hidden');
+                contentProfile.classList.add('hidden');
+                
+                // Show category content
+                contentCategory.classList.remove('hidden');
+                
+                // Если выбрана категория "Услуги", показываем основной контент услуг
+                if (category === 'services') {
+                    document.getElementById('services-main-content').classList.remove('hidden');
+                    document.getElementById('services-subcategories-content').classList.add('hidden');
+                    document.getElementById('services-list-content').classList.add('hidden');
+                    document.getElementById('services-category-title').textContent = 'Категории';
+                } else {
+                    // Для других категорий сразу показываем соответствующие подкатегории
+                    showServiceSubcategoriesForCategory(category);
+                }
+            });
+        });
+
+        // Показать подкатегории для выбранной категории
+        function showServiceSubcategoriesForCategory(category) {
+            document.getElementById('services-main-content').classList.add('hidden');
+            document.getElementById('services-subcategories-content').classList.remove('hidden');
+            document.getElementById('services-list-content').classList.add('hidden');
+            
+            // Скрываем все подкатегории
+            document.querySelectorAll('.subcategories-grid').forEach(el => {
+                el.classList.add('hidden');
+            });
+            
+            // Определяем, какую категорию услуг показать
+            let serviceCategory = '';
+            switch(category) {
+                case 'code':
+                    serviceCategory = 'development';
+                    break;
+                case 'design':
+                    serviceCategory = 'design';
+                    break;
+                case 'marketing':
+                    serviceCategory = 'marketing';
+                    break;
+                case 'copywriting':
+                    serviceCategory = 'content';
+                    break;
+                default:
+                    serviceCategory = 'development';
+            }
+            
+            // Показываем нужную подкатегорию
+            document.getElementById(`${serviceCategory}-subcategories`).classList.remove('hidden');
+            
+            // Обновляем заголовок
+            let categoryName = '';
+            switch(serviceCategory) {
+                case 'development':
+                    categoryName = 'Разработка';
+                    break;
+                case 'design':
+                    categoryName = 'Дизайн';
+                    break;
+                case 'marketing':
+                    categoryName = 'Маркетинг';
+                    break;
+                case 'content':
+                    categoryName = 'Контент';
+                    break;
+            }
+            document.getElementById('services-category-title').textContent = `Категории: ${categoryName}`;
+        }
+
+        // Обработчики для кнопок категорий услуг
+        document.querySelectorAll('.service-category-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const category = this.dataset.serviceCategory;
+                showServiceSubcategories(category);
+            });
+        });
+
+        // Показать подкатегории услуг
+        function showServiceSubcategories(category) {
+            document.getElementById('services-main-content').classList.add('hidden');
+            document.getElementById('services-subcategories-content').classList.remove('hidden');
+            document.getElementById('services-list-content').classList.add('hidden');
+            
+            // Скрываем все подкатегории
+            document.querySelectorAll('.subcategories-grid').forEach(el => {
+                el.classList.add('hidden');
+            });
+            
+            // Показываем нужную подкатегорию
+            document.getElementById(`${category}-subcategories`).classList.remove('hidden');
+            
+            // Обновляем заголовок
+            let categoryName = '';
+            switch(category) {
+                case 'development':
+                    categoryName = 'Разработка';
+                    break;
+                case 'design':
+                    categoryName = 'Дизайн';
+                    break;
+                case 'marketing':
+                    categoryName = 'Маркетинг';
+                    break;
+                case 'content':
+                    categoryName = 'Контент';
+                    break;
+            }
+            document.getElementById('services-category-title').textContent = `Категории: ${categoryName}`;
+        }
+
+        // Обработчики для кнопок подкатегорий
+        document.querySelectorAll('.subcategory-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const subcategory = this.dataset.subcategory;
+                const category = getCategoryFromSubcategory(subcategory);
+                showServicesList(category, subcategory);
+            });
+        });
+
+        // Получить категорию из подкатегории
+        function getCategoryFromSubcategory(subcategory) {
+            if (['web', 'mobile', 'bots'].includes(subcategory)) {
+                return 'development';
+            } else if (['ui', 'graphic', 'logo'].includes(subcategory)) {
+                return 'design';
+            } else if (['smm', 'seo', 'context'].includes(subcategory)) {
+                return 'marketing';
+            } else if (['copywriting', 'translation', 'video'].includes(subcategory)) {
+                return 'content';
+            }
+            return 'development';
+        }
+
+        // Показать список услуг
+        function showServicesList(category, subcategory) {
+            document.getElementById('services-subcategories-content').classList.add('hidden');
+            document.getElementById('services-list-content').classList.remove('hidden');
+            
+            // Обновляем заголовок
+            let subcategoryName = '';
+            switch(subcategory) {
+                case 'web':
+                    subcategoryName = 'Веб-разработка';
+                    break;
+                case 'mobile':
+                    subcategoryName = 'Мобильные приложения';
+                    break;
+                case 'bots':
+                    subcategoryName = 'Чат-боты';
+                    break;
+                case 'ui':
+                    subcategoryName = 'UI/UX дизайн';
+                    break;
+                case 'graphic':
+                    subcategoryName = 'Графический дизайн';
+                    break;
+                case 'logo':
+                    subcategoryName = 'Логотипы';
+                    break;
+                case 'smm':
+                    subcategoryName = 'SMM';
+                    break;
+                case 'seo':
+                    subcategoryName = 'SEO';
+                    break;
+                case 'context':
+                    subcategoryName = 'Контекстная реклама';
+                    break;
+                case 'copywriting':
+                    subcategoryName = 'Копирайтинг';
+                    break;
+                case 'translation':
+                    subcategoryName = 'Переводы';
+                    break;
+                case 'video':
+                    subcategoryName = 'Видеомонтаж';
+                    break;
+            }
+            
+            document.getElementById('services-category-title').textContent = `Услуги: ${subcategoryName}`;
+            
+            // Отображаем услуги
+            renderServices(category, subcategory);
+        }
+
+        // Back buttons
+        document.getElementById('back-to-home').addEventListener('click', () => {
+            contentCategory.classList.add('hidden');
+            categoriesMenu.classList.remove('hidden');
+            tabsSection.classList.remove('hidden');
+            filterSection.classList.remove('hidden');
+            servicesTitleSection.classList.remove('hidden');
+            contentHome.classList.remove('hidden');
+        });
+
+        document.getElementById('back-to-services').addEventListener('click', function() {
+            document.getElementById('services-subcategories-content').classList.add('hidden');
+            document.getElementById('services-main-content').classList.remove('hidden');
+            document.getElementById('services-category-title').textContent = 'Категории';
+        });
+
+        document.getElementById('back-to-subcategories').addEventListener('click', function() {
+            document.getElementById('services-list-content').classList.add('hidden');
+            document.getElementById('services-subcategories-content').classList.remove('hidden');
+        });
+
+        document.getElementById('back-to-home-create').addEventListener('click', () => {
+            contentCreate.classList.add('hidden');
+            contentHome.classList.remove('hidden');
+            categoriesMenu.classList.remove('hidden');
+            tabsSection.classList.remove('hidden');
+            filterSection.classList.remove('hidden');
+            servicesTitleSection.classList.remove('hidden');
+        });
+
+        document.getElementById('back-to-home-messages').addEventListener('click', () => {
+            contentMessages.classList.add('hidden');
+            contentHome.classList.remove('hidden');
+            categoriesMenu.classList.remove('hidden');
+            tabsSection.classList.remove('hidden');
+            filterSection.classList.remove('hidden');
+            servicesTitleSection.classList.remove('hidden');
+        });
+
+        document.getElementById('back-to-home-profile').addEventListener('click', () => {
+            contentProfile.classList.add('hidden');
+            contentHome.classList.remove('hidden');
+            categoriesMenu.classList.remove('hidden');
+            tabsSection.classList.remove('hidden');
+            filterSection.classList.remove('hidden');
+            servicesTitleSection.classList.remove('hidden');
+        });
+
+        // Filter tags
+        const filterTags = document.querySelectorAll('.filter-tag');
+        filterTags.forEach(tag => {
+            tag.addEventListener('click', () => {
+                filterTags.forEach(t => t.classList.remove('active'));
+                tag.classList.add('active');
+            });
+        });
+
+        // Bottom Navigation
+        const navButtons = document.querySelectorAll('.nav-button');
+        navButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Update active nav button
+                navButtons.forEach(b => b.classList.remove('active'));
+                button.classList.add('active');
+                
+                // Hide all content and main sections
+                categoriesMenu.classList.add('hidden');
+                tabsSection.classList.add('hidden');
+                filterSection.classList.add('hidden');
+                servicesTitleSection.classList.add('hidden');
+                contentHome.classList.add('hidden');
+                contentVacancies.classList.add('hidden');
+                contentMicrotasks.classList.add('hidden');
+                contentCategory.classList.add('hidden');
+                contentSearch.classList.add('hidden');
+                contentCreate.classList.add('hidden');
+                contentMessages.classList.add('hidden');
+                contentProfile.classList.add('hidden');
+                
+                // Show appropriate content
+                if (button.id === 'nav-home') {
+                    categoriesMenu.classList.remove('hidden');
+                    tabsSection.classList.remove('hidden');
+                    filterSection.classList.remove('hidden');
+                    servicesTitleSection.classList.remove('hidden');
+                    contentHome.classList.remove('hidden');
+                    // Reset tabs to show "Все задания" as active
+                    document.querySelectorAll('.tab-btn').forEach(btn => {
+                        if (btn.dataset.tab === 'all') {
+                            btn.className = 'tab-active flex-1 py-2.5 px-3 rounded-lg font-medium text-xs tab-btn';
+                        } else {
+                            btn.className = 'tab-inactive flex-1 py-2.5 px-3 rounded-lg font-medium text-xs tab-btn';
+                        }
+                    });
+                } else if (button.id === 'nav-search') {
+                    contentSearch.classList.remove('hidden');
+                } else if (button.id === 'nav-create') {
+                    contentCreate.classList.remove('hidden');
+                } else if (button.id === 'nav-messages') {
+                    contentMessages.classList.remove('hidden');
+                } else if (button.id === 'nav-profile-bottom') {
+                    contentProfile.classList.remove('hidden');
+                }
+            });
+        });
+
+        // Profile tabs
+        const profileTabs = document.querySelectorAll('.profile-tab');
+        profileTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Update active tab
+                profileTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Show appropriate content
+                document.getElementById('profile-my-tasks').classList.add('hidden');
+                document.getElementById('profile-favorites').classList.add('hidden');
+                document.getElementById('profile-reviews').classList.add('hidden');
+                
+                document.getElementById(`profile-${tab.dataset.tab}`).classList.remove('hidden');
+            });
+        });
+
+        // Theme Toggle
+        const btnTheme = document.getElementById('btn-theme');
+        const body = document.body;
+
+        btnTheme.addEventListener('click', () => {
+            body.classList.toggle('dark');
+            const isDark = body.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            
+            // Update Telegram background
+            if (window.Telegram && window.Telegram.WebApp) {
+                document.body.style.backgroundColor = isDark ? '#120e2d' : '#f0f4ff';
+            }
+        });
+
+        // Load theme from localStorage
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            body.classList.add('dark');
+        }
+
+        // Telegram Mini App init
+        if (window.Telegram && window.Telegram.WebApp) {
+            const webApp = window.Telegram.WebApp;
+            webApp.ready();
+            webApp.expand();
+            document.body.style.backgroundColor = body.classList.contains('dark') ? '#120e2d' : '#f0f4ff';
+        }
+    </script>
+</body>
+</html>
